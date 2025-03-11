@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Tic Tac Toe</title>
+    <style>
+        body {
+            font-family: 'Arial Rounded MT Bold', Arial, sans-serif;
+            background: #1a1a1a;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            margin: 0;
+            color: #fff;
+        }
+
+        .container {
+            text-align: center;
+            margin-top: 2rem;
+        }
+
+        h1 {
+            color: #ffd700;
+            text-shadow: 0 0 10px #ffd700;
+            font-size: 2.5em;
+            margin-bottom: 1rem;
+        }
+
+        .board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin: 2rem auto;
+            max-width: 400px;
+        }
+
+        .cell {
+            width: 100px;
+            height: 100px;
+            background: #2a2a2a;
+            border-radius: 10px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .cell:hover {
+            background: #3a3a3a;
+            transform: scale(1.05);
+        }
+
+        .cell.x::before,
+        .cell.x::after {
+            content: '';
+            position: absolute;
+            background: #ff4444;
+            width: 4px;
+            height: 70%;
+            transform: rotate(45deg);
+            box-shadow: 0 0 15px #ff4444;
+        }
+
+        .cell.x::after {
+            transform: rotate(-45deg);
+        }
+
+        .cell.o::before {
+            content: '';
+            position: absolute;
+            border: 8px solid #ffd700;
+            border-radius: 50%;
+            width: 60%;
+            height: 60%;
+            box-shadow: 0 0 15px #ffd700;
+            animation: o-glow 1.5s infinite;
+        }
+
+        .cell.o::after {
+            content: '';
+            position: absolute;
+            width: 30%;
+            height: 30%;
+            background: #1a1a1a;
+            border-radius: 50%;
+            box-shadow: inset 0 0 10px #1a1a1a;
+        }
+
+        .cell.win {
+            background: #8a2be2;
+            animation: win-glow 1s infinite;
+        }
+
+        @keyframes win-glow {
+            0%, 100% { box-shadow: 0 0 10px #8a2be2; }
+            50% { box-shadow: 0 0 20px #8a2be2; }
+        }
+
+        @keyframes o-glow {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+        }
+
+        .status {
+            font-size: 1.5em;
+            margin: 1rem 0;
+            color: #ffd700;
+            text-shadow: 0 0 10px #ffd700;
+        }
+
+        button {
+            padding: 10px 20px;
+            font-size: 1.2em;
+            background: #ff4444;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-top: 1rem;
+            box-shadow: 0 0 15px #ff4444;
+        }
+
+        button:hover {
+            transform: scale(1.1);
+            box-shadow: 0 0 25px #ff4444;
+        }
+
+        @media (max-width: 480px) {
+            .cell {
+                width: 80px;
+                height: 80px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>NEON TIC TAC TOE</h1>
+        <div class="status" id="status">Player X's turn</div>
+        <div class="board" id="board">
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+            <div class="cell" data-cell></div>
+        </div>
+        <button id="reset">Reset Game</button>
+    </div>
+
+    <script>
+        const X_CLASS = 'x';
+        const O_CLASS = 'o';
+        const WINNING_COMBINATIONS = [
+            [0, 1, 2], [3, 4, 5], [6, 7, 8],
+            [0, 3, 6], [1, 4, 7], [2, 5, 8],
+            [0, 4, 8], [2, 4, 6]
+        ];
+
+        const cellElements = document.querySelectorAll('[data-cell]');
+        const board = document.getElementById('board');
+        const statusText = document.getElementById('status');
+        const resetButton = document.getElementById('reset');
+        let gameActive = true;
+        let currentPlayer = X_CLASS;
+
+        startGame();
+
+        resetButton.addEventListener('click', startGame);
+
+        function startGame() {
+            gameActive = true;
+            currentPlayer = X_CLASS;
+            cellElements.forEach(cell => {
+                cell.classList.remove(X_CLASS);
+                cell.classList.remove(O_CLASS);
+                cell.classList.remove('win');
+                cell.removeEventListener('click', handleClick);
+                cell.addEventListener('click', handleClick, { once: true });
+            });
+            statusText.textContent = `Player ${currentPlayer.toUpperCase()}'s turn`;
+        }
+
+        function handleClick(e) {
+            const cell = e.target;
+            if (!gameActive || cell.classList.contains(X_CLASS) || cell.classList.contains(O_CLASS)) return;
+
+            placeMark(cell, currentPlayer);
+            
+            if (checkWin(currentPlayer)) {
+                endGame(true);
+            } else if (isDraw()) {
+                endGame(false);
+            } else {
+                swapTurns();
+                statusText.textContent = `Player ${currentPlayer.toUpperCase()}'s turn`;
+            }
+        }
+
+        function placeMark(cell, player) {
+            cell.classList.add(player);
+        }
+
+        function swapTurns() {
+            currentPlayer = currentPlayer === X_CLASS ? O_CLASS : X_CLASS;
+        }
+
+        function checkWin(player) {
+            return WINNING_COMBINATIONS.some(combination => {
+                return combination.every(index => {
+                    return cellElements[index].classList.contains(player);
+                });
+            });
+        }
+
+        function endGame(win) {
+            gameActive = false;
+            if (win) {
+                statusText.textContent = `Player ${currentPlayer.toUpperCase()} wins! 🎉`;
+                highlightWinningCombination(currentPlayer);
+            } else {
+                statusText.textContent = "Draw! 😄";
+            }
+        }
+
+        function highlightWinningCombination(player) {
+            WINNING_COMBINATIONS.forEach(combination => {
+                if (combination.every(index => 
+                    cellElements[index].classList.contains(player))) {
+                    combination.forEach(index => {
+                        cellElements[index].classList.add('win');
+                    });
+                }
+            });
+        }
+
+        function isDraw() {
+            return [...cellElements].every(cell => {
+                return cell.classList.contains(X_CLASS) || cell.classList.contains(O_CLASS);
+            });
+        }
+    </script>
+</body>
+</html>
